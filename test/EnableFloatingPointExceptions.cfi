@@ -1,0 +1,64 @@
+  service = EnableFloatingPointExceptions {
+
+    untracked bool reportSettings = true
+
+    untracked bool setPrecisionDouble = true
+
+    untracked vstring moduleNames = { "default","VtxSmeared","g4SimHits","mix","trDigi","calDigi","muonDigi" }
+
+    untracked
+    PSet default =  {
+        untracked bool enableDivByZeroEx = false
+        untracked bool enableInvalidEx = false
+        untracked bool enableOverFlowEx = false
+        untracked bool enableUnderFlowEx = false
+     }
+
+    untracked
+    PSet VtxSmeared = { 
+        untracked bool enableDivByZeroEx = true
+        untracked bool enableInvalidEx = true
+        untracked bool enableOverFlowEx = true
+        untracked bool enableUnderFlowEx = true
+     }
+
+    untracked
+    PSet g4SimHits = { 
+        untracked bool enableDivByZeroEx = false
+        untracked bool enableInvalidEx = false
+        untracked bool enableOverFlowEx = false
+        untracked bool enableUnderFlowEx = false
+     }
+
+    untracked
+    PSet mix = { 
+        untracked bool enableDivByZeroEx = true
+        untracked bool enableInvalidEx = true
+        untracked bool enableOverFlowEx = true
+        untracked bool enableUnderFlowEx = true
+     }
+
+    untracked
+    PSet trDigi = { 
+        untracked bool enableDivByZeroEx = true
+        untracked bool enableInvalidEx = true
+        untracked bool enableOverFlowEx = true
+        untracked bool enableUnderFlowEx = true
+     }
+
+    untracked
+    PSet calDigi = { 
+        untracked bool enableDivByZeroEx = true
+        untracked bool enableInvalidEx = true
+        untracked bool enableOverFlowEx = true
+        untracked bool enableUnderFlowEx = true
+     }
+
+    untracked
+    PSet muonDigi = { 
+        untracked bool enableDivByZeroEx = true
+        untracked bool enableInvalidEx = true
+        untracked bool enableOverFlowEx = true
+        untracked bool enableUnderFlowEx = true
+    }
+  }

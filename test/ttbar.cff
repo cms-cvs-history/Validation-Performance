@@ -1,0 +1,41 @@
+include "Validation/Performance/test/MessageLogger.cff"
+
+service = Timing {}
+
+service = TimerService{}
+
+include "Configuration/ReleaseValidation/data/Services.cff"
+
+include "SimGeneral/HepPDTESSource/data/pythiapdt.cfi"
+
+source = PythiaSource {
+  untracked int32 pythiaPylistVerbosity = 0
+  untracked bool pythiaHepMCVerbosity   = false
+  untracked int32 maxEventsToPrint      = 0
+  untracked double filterEfficiency     = 1.
+
+  PSet PythiaParameters = {
+    # This is a vector of ParameterSet names to be read, in this order
+    vstring parameterSets = {
+      "pythiaUESettings",
+      "processParameters"
+    }
+
+    include "Configuration/Generator/data/PythiaUESettings.cfi"
+
+    vstring processParameters = {
+      'MSEL      = 0     ! User defined processes',
+      'MSUB(81)  = 1     ! qqbar to QQbar',
+      'MSUB(82)  = 1     ! gg to QQbar',
+      'MSTP(7)   = 6     ! flavour = top',
+      'PMAS(6,1) = 175.  ! top quark mass'
+    }
+  }
+}
+
+# event vertex smearing - applies only once (internal check)
+# Note : all internal generatoes will always do (0,0,0) vertex
+#
+include "IOMC/EventVertexGenerators/data/VtxSmearedGauss.cfi"
+
+include "SimG4Core/Configuration/data/SimG4Core.cff"
