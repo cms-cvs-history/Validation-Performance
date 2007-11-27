@@ -19,7 +19,7 @@ grep -v sim SimulationCandles_${CMSSW_VERSION}.txt >tmp; mv tmp SimulationCandle
 cmsRun ZPrimeJJM700_sim.cfg >& ZPrimeJJM700_sim.log
 ../relvalreport_v2.py -i SimulationCandles_${CMSSW_VERSION}.txt -t perfreport_tmp -R -P >& ZPrimeJJM700_digi.log
 cd ..
-foreach i (MinBias)
+foreach i (SingleMuMinusPt1000)
 mkdir ${i}_Valgrind
 cd ${i}_Valgrind
 ../SimulationCandles.pl 1 $i G4no 78
