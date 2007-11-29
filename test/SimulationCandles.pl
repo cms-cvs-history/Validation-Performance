@@ -18,16 +18,9 @@
 #1-Number of events to put in the cfg files
 #2-Name of the candle(s) to process (either AllCandles, or NameOfTheCandle)
 #3-Whether or not to inlcude the dumping of G4 output messages in the cfg files
-#E.g.: ./SimulationCandles.pl 50 AllCandles G4yes
+#4-Profiles to run (with code below)
+#E.g.: ./SimulationCandles.pl 50 AllCandles G4yes 12
 
-#use Getopt::Std;
-#getopts('n:c:g:');
-#print $opt_n;
-#print $opt_c;
-#print $opt_g;
-#$NumberOfEvents=$opt_n;
-#$WhichCandles=$opt_c;
-#$DumpG4Messages=$opt_g;
 if ($#ARGV != 3) {
 	print "Usage: ./SimulationCandles.pl NumberOfEventsPerCfgFile Candles G4DumpOrNot Profile
 Candles codes:
@@ -105,10 +98,8 @@ foreach (@Candle)
 {
     $Candle=$_;
     $RelValCfg=$CMSSW_RELEASE_BASE."/src/Configuration/ReleaseValidation/data/".$Candle.".cfg";
-    #print "Checking $RelValCfg\n";
     if (-e $RelValCfg)
     {
-	#print "File $_ found in $CMSSW_RELEASE_BASE/src/Configuration/ReleaseValidation/data/\n";
 	#Opening original RelVal cfg
 	open(RELVALCFG,"<$RelValCfg")||die "Couldn't open file $RelValCfg - $!\n";
 	#Opening new _sim.cfg file
@@ -143,7 +134,6 @@ foreach (@Candle)
 		next;
 	    }
 	    #1-Number of events
-	    #print $line;
 	    if ($_=~/\w maxEvents\b/)
 	    {
 		$NewFileLine="  untracked PSet maxEvents = \{untracked int32 input = $NumberOfEvents\}\n";
@@ -151,14 +141,34 @@ foreach (@Candle)
 	    #2-Add G4cout/cerr messages (right after MessageLogger.cfi include)
 	    if ($_=~/include \"FWCore\/MessageService\/data\/MessageLogger.cfi\"/)
 	    {
-		#print "Found $_\n";
 		#Could add some comment here to mark the script addition
 		print SIMCFG $_;
+		#2.1-Later addition of SimpleMemoryCheck in the output:
+		    print SIMCFG "  service = SimpleMemoryCheck\n";
+		    print SIMCFG "  {\n";
+		    print SIMCFG "     untracked int32 ignoreTotal = 1 \# default is one\n";
+		    print SIMCFG "     untracked bool oncePerEventMode = true \# default is false, so it only reports increases\n";
+		    print SIMCFG "  }\n";
 		if ($DumpG4)
 		{
 		    print GSIMCFG $_;
+		    #Ugly code... cut and paste...
+		    #2.1-Later addition of SimpleMemoryCheck in the output:
+		    print GSIMCFG "  service = SimpleMemoryCheck\n";
+		    print GSIMCFG "  {\n";
+		    print GSIMCFG "     untracked int32 ignoreTotal = 1 \# default is one\n";
+		    print GSIMCFG "     untracked bool oncePerEventMode = true \# default is false, so it only reports increases\n";
+		    print GSIMCFG "  }\n";
 		}
 		print DIGICFG $_;
+		#Ugly code... cut and paste... again!
+		#2.1-Later addition of SimpleMemoryCheck in the output:
+		print DIGICFG "  service = SimpleMemoryCheck\n";
+		print DIGICFG "  {\n";
+		print DIGICFG "     untracked int32 ignoreTotal = 1 \# default is one\n";
+		print DIGICFG "     untracked bool oncePerEventMode = true \# default is false, so it only reports increases\n";
+		print DIGICFG "  }\n";
+
 		if ($DumpG4)
 		{
 		    print GSIMCFG "  replace MessageLogger.categories = \{ \"FwkJob\", \"FwkReport\", \"FwkSummary\", \"Root_NoDictionary\", \"G4cout\", \"G4cerr\" \}\n";
@@ -171,7 +181,6 @@ foreach (@Candle)
 		    print GSIMCFG "                              }\n";
 		}
 		next;
-		#$NewFileLine = ""; #Since we always print $NewFileLine at the end of the if's
 	    }
 	    #3.1-Implement here the matching of PythiaSource block (count the "{")
 	    if ($_=~/source = /)
@@ -229,7 +238,6 @@ foreach (@Candle)
 		}
 		print DIGICFG "\#".$_;
 		next;
-		#$NewFileLine = ""; #Since we always print $NewFileLine at the end of the if's
 	    }
 	    if ($_=~/path p2 = \{pdigi\}/)
 	    {
@@ -257,7 +265,6 @@ foreach (@Candle)
 		}
 		print DIGICFG "    untracked string fileName = \"".$1."_digi.root\"\n";
 		next;
-		#$NewFileLine = ""; #Since we always print $NewFileLine at the end of the if's
 	    }
 	    #6-Change dataTier from "GEN-SIM-DIGI-RECO" to "GEN-SIM"
 	    if ($_=~/untracked string dataTier = \"GEN-SIM-DIGI-RECO\"/)
@@ -269,7 +276,6 @@ foreach (@Candle)
 		}
 		print DIGICFG "      untracked string dataTier = \"DIGI\"\n";
 		next;
-		#$NewFileLine = ""; #Since we always print $NewFileLine at the end of the if's
 	    }
 	    #7-Change schedule from {p0,p1,p2,p3,p4,outpath} to {p0,p1,outpath} for sim
 	    #  to {p1,outpath} for digi
