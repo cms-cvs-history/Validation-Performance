@@ -33,15 +33,18 @@ AllCandles
  TTbar
  ZPrimeJJM700
 Profile codes (multiple codes can be used):
+ 0-TimingReport
  1-TimeReport
- 2-EdmSize
- 3-IgProfPerf
- 4-IgProfMemTotal
- 5-IgProfMemLive
- 6-IgProfAnalyse
- 7-ValgrindFCE
- 8-ValgrindMemCheck
-E.g: ./SimulationCandles.pl 10 AllCandles G4yes 1 OR ./SimulationCandles.pl 50 HiggsZZ4LM190 G4no 12\n";
+ 2-SimpleMemoryCheck
+ 3-EdmSize
+ 4-IgProfPerf
+ 5-IgProfMemTotal
+ 6-IgProfMemLive
+ 7-IgProfAnalyse
+ 8-ValgrindFCE
+ 9-ValgrindMemCheck
+ 9-SimpleMemoryCheck
+E.g: ./SimulationCandles.pl 10 AllCandles G4yes 1 OR ./SimulationCandles.pl 50 HiggsZZ4LM190 G4no 012\n";
 	exit;
 }
 $NumberOfEvents=$ARGV[0];
@@ -82,11 +85,13 @@ if ($WhichCandles eq "AllCandles")
 	  "SinglePiMinusPt1000",
 	  "TTbar",
 	  "ZPrimeJJM700");
+    print "ALL standard simulation candles will be PROCESSED:\n@Candle\n";
 }
 else
 {
    
     @Candle=($WhichCandles);
+    print "ONLY @Candle will be PROCESSED\n";
 }
 #Creating and opening the ASCII input file for the relvalreport script:
 $SimCandlesFile= "SimulationCandles"."_".$CMSSW_VERSION.".txt";
@@ -149,7 +154,9 @@ foreach (@Candle)
 		    print SIMCFG "     untracked int32 ignoreTotal = 1 \# default is one\n";
 		    print SIMCFG "     untracked bool oncePerEventMode = true \# default is false, so it only reports increases\n";
 		    print SIMCFG "  }\n";
-		if ($DumpG4)
+		#2.2-Latest addition of Timing service in the output:
+		    print SIMCFG "  service = Timing{}\n";
+		if ($DumpG4)    
 		{
 		    print GSIMCFG $_;
 		    #Ugly code... cut and paste...
@@ -159,6 +166,8 @@ foreach (@Candle)
 		    print GSIMCFG "     untracked int32 ignoreTotal = 1 \# default is one\n";
 		    print GSIMCFG "     untracked bool oncePerEventMode = true \# default is false, so it only reports increases\n";
 		    print GSIMCFG "  }\n";
+		    #2.2-Latest addition of Timing service in the output:
+                    print GSIMCFG "  service = Timing{}\n";
 		}
 		print DIGICFG $_;
 		#Ugly code... cut and paste... again!
@@ -168,7 +177,8 @@ foreach (@Candle)
 		print DIGICFG "     untracked int32 ignoreTotal = 1 \# default is one\n";
 		print DIGICFG "     untracked bool oncePerEventMode = true \# default is false, so it only reports increases\n";
 		print DIGICFG "  }\n";
-
+		#2.2-Latest addition of Timing service in the output:
+		print DIGICFG "  service = Timing{}\n";
 		if ($DumpG4)
 		{
 		    print GSIMCFG "  replace MessageLogger.categories = \{ \"FwkJob\", \"FwkReport\", \"FwkSummary\", \"Root_NoDictionary\", \"G4cout\", \"G4cerr\" \}\n";
@@ -308,83 +318,212 @@ foreach (@Candle)
     else
     {
 	print "File $Candle.cfg **NOT** found in ".$CMSSW_RELEASE_BASE."/src/Configuration/ReleaseValidation/data/\n";
+	print "Exiting!\n";
+	exit;
     }
 #Third task: create SimulationCandles.txt ASCII file input to relvalreport script
     #Use parameters to set which one to dump.... to be implemented
     #The candle file is opened before the candle loop, since for each candle we will append lines to it.
     print SIMCANDLES "\n\#".$Candle."\n\n";
     print SIMCANDLES "\#GEN+SIM step\n";
-    if ($ProfileCode=~/1/)
+    if ($ProfileCode=~/0/)
     {
+	print "Preparing $Candle for TimingReport profile\n";
 	if  ($DumpG4)
 	{
-	    print SIMCANDLES "cmsRun $GOutSimFile \@\@\@ Timereport_Parser \@\@\@ ".$Candle."_sim_TimeReport\n";
+	    print SIMCANDLES "cmsRun $GOutSimFile \@\@\@ Timing_Parser \@\@\@ ".$Candle."_sim_TimingReport";
+	    if (($ProfileCode=~/1/)||($ProfileCode=~/2/)||($ProfileCode=~/3/))
+	    {
+		print SIMCANDLES " \@\@\@ reuse\n";
+	    }
+	    else
+	    {
+		print SIMCANDLES "\n";
+	    }
 	}
 	else
 	{
-	    print SIMCANDLES "cmsRun $SimFile \@\@\@ Timereport_Parser \@\@\@ ".$Candle."_sim_TimeReport\n";
+	    print SIMCANDLES "cmsRun $SimFile \@\@\@ Timing_Parser \@\@\@ ".$Candle."_sim_TimingReport";
+	    if (($ProfileCode=~/1/)||($ProfileCode=~/2/)||($ProfileCode=~/3/))
+	    {
+		print SIMCANDLES " \@\@\@ reuse\n";
+	    }
+	    else
+	    {
+		print SIMCANDLES "\n";
+	    }
+	}
+    }
+    if ($ProfileCode=~/1/)
+    {
+	print "Preparing $Candle for TimeReport profile\n";
+	if  ($DumpG4)
+	{
+	    print SIMCANDLES "cmsRun $GOutSimFile \@\@\@ Timereport_Parser \@\@\@ ".$Candle."_sim_TimeReport";
+	    if (($ProfileCode=~/2/)||($ProfileCode=~/3/))
+	    {
+		print SIMCANDLES " \@\@\@ reuse\n";
+	    }
+	    else
+	    {
+		print SIMCANDLES "\n";
+	    }
+	}
+	else
+	{
+	    print SIMCANDLES "cmsRun $SimFile \@\@\@ Timereport_Parser \@\@\@ ".$Candle."_sim_TimeReport";
+	    if (($ProfileCode=~/2/)||($ProfileCode=~/3/))
+	    {
+		print SIMCANDLES " \@\@\@ reuse\n";
+	    }
+	    else
+	    {
+		print SIMCANDLES "\n";
+	    }
 	}
     }
     if ($ProfileCode=~/2/)
     {
-	print SIMCANDLES $Candle."_sim.root \@\@\@ Edm_Size \@\@\@ ".$Candle."_sim_EdmSize\n";
+	print "Preparing $Candle for SimpleMemoryCheck profile\n";
+	print SIMCANDLES "cmsRun $SimFile \@\@\@ SimpleMem_Parser \@\@\@ ".$Candle."_sim_SimpleMemReport";
+	if ($ProfileCode=~/3/)
+	{
+	    print SIMCANDLES " \@\@\@ reuse\n";
+	}
+	else
+	{
+	    print SIMCANDLES "\n";
+	}
     }
     if ($ProfileCode=~/3/)
     {
-	print SIMCANDLES "cmsRun $SimFile \@\@\@ IgProf_perf.PERF_TICKS \@\@\@ ".$Candle."_sim_IgProfperf\n";
+	print "Preparing $Candle for EdmSize profile\n";
+	print SIMCANDLES $Candle."_sim.root \@\@\@ Edm_Size \@\@\@ ".$Candle."_sim_EdmSize\n";
     }
     if ($ProfileCode=~/4/)
     {
-	print SIMCANDLES "cmsRun $SimFile \@\@\@ IgProf_mem.MEM_TOTAL \@\@\@ ".$Candle."_sim_IgProfMemTotal \@\@\@ reuse\n";
+	print "Preparing $Candle for IgProfPerf profile\n";
+	print SIMCANDLES "cmsRun $SimFile \@\@\@ IgProf_perf.PERF_TICKS \@\@\@ ".$Candle."_sim_IgProfperf\n";
     }
     if ($ProfileCode=~/5/)
     {
-	print SIMCANDLES "cmsRun $SimFile \@\@\@ IgProf_mem.MEM_LIVE \@\@\@ ".$Candle."_sim_IgProfMemLive \@\@\@ reuse\n";
+	print "Preparing $Candle for IgProfMem (MEM_TOTAL) profile\n";
+	print SIMCANDLES "cmsRun $SimFile \@\@\@ IgProf_mem.MEM_TOTAL \@\@\@ ".$Candle."_sim_IgProfMemTotal";
+	if (($ProfileCode=~/6/)||($ProfileCode=~/7/))
+	    {
+		print SIMCANDLES " \@\@\@ reuse\n";
+	    }
+	    else
+	    {
+		print SIMCANDLES "\n";
+	    }
     }
     if ($ProfileCode=~/6/)
     {
-	print SIMCANDLES "cmsRun $SimFile \@\@\@ IgProf_mem.ANALYSE \@\@\@ ".$Candle."_sim_IgProfMemAnalyse\n";
+	print "Preparing $Candle for IgProfMem (MEM_LIVE) profile\n";
+	print SIMCANDLES "cmsRun $SimFile \@\@\@ IgProf_mem.MEM_LIVE \@\@\@ ".$Candle."_sim_IgProfMemLive";
+	if (($ProfileCode=~/7/))
+	    {
+		print SIMCANDLES " \@\@\@ reuse\n";
+	    }
+	    else
+	    {
+		print SIMCANDLES "\n";
+	    }
     }
     if ($ProfileCode=~/7/)
     {
-	print SIMCANDLES "cmsRun $SimFile \@\@\@ ValgrindFCE \@\@\@ ".$Candle."_sim_valgrind\n";
+	print "Preparing $Candle for IgProfMem (MEM_ANALYSE) profile\n";
+	print SIMCANDLES "cmsRun $SimFile \@\@\@ IgProf_mem.ANALYSE \@\@\@ ".$Candle."_sim_IgProfMemAnalyse\n";
     }
     if ($ProfileCode=~/8/)
     {
+	print "Preparing $Candle for Valgrind callgrind FCE profile\n";
+	print SIMCANDLES "cmsRun $SimFile \@\@\@ ValgrindFCE \@\@\@ ".$Candle."_sim_valgrind\n";
+    }
+    if ($ProfileCode=~/9/)
+    {
+	print "Preparing $Candle for Valgrind memcheck profile\n";
 	print SIMCANDLES "cmsRun $SimFile \@\@\@ Memcheck_Valgrind \@\@\@ ".$Candle."_sim_memcheck_valgrind\n";
     }
     print SIMCANDLES "\n\#DIGI step\n";
-#Add here the first line to run the _G4.cfgs to check G4 output and timeReports:
-#Then can move EdmSize up here and delete it from the bottom 
+    if ($ProfileCode=~/0/)
+    {
+	print SIMCANDLES "cmsRun $DigiFile \@\@\@ Timing_Parser \@\@\@ ".$Candle."_sim_TimingReport";
+	if (($ProfileCode=~/1/)||($ProfileCode=~/2/)||($ProfileCode=~/3/))
+	    {
+		print SIMCANDLES " \@\@\@ reuse\n";
+	    }
+	    else
+	    {
+		print SIMCANDLES "\n";
+	    }
+    }
     if ($ProfileCode=~/1/)
     {
-	print SIMCANDLES "cmsRun $DigiFile \@\@\@ Timereport_Parser \@\@\@ ".$Candle."_digi_TimeReport\n";
+	print SIMCANDLES "cmsRun $DigiFile \@\@\@ Timereport_Parser \@\@\@ ".$Candle."_digi_TimeReport";
+	if (($ProfileCode=~/2/)||($ProfileCode=~/3/))
+	{
+	    print SIMCANDLES " \@\@\@ reuse\n";
+	}
+	else
+	{
+	    print SIMCANDLES "\n";
+	}
     }
     if ($ProfileCode=~/2/)
     {
-	print SIMCANDLES $Candle."_digi.root \@\@\@ Edm_Size \@\@\@ ".$Candle."_digi_EdmSize\n";
+	print SIMCANDLES "cmsRun $DigiFile \@\@\@ SimpleMem_Parser \@\@\@ ".$Candle."_digi_SimpleMemReport";
+	if ($ProfileCode=~/3/)
+	{
+	    print SIMCANDLES " \@\@\@ reuse\n";
+	}
+	else
+	{
+	    print SIMCANDLES "\n";
+	}
     }
     if ($ProfileCode=~/3/)
     {
-	print SIMCANDLES "cmsRun $DigiFile \@\@\@ IgProf_perf.PERF_TICKS \@\@\@ ".$Candle."_digi_IgProfperf\n";
+	print SIMCANDLES $Candle."_digi.root \@\@\@ Edm_Size \@\@\@ ".$Candle."_digi_EdmSize\n";
     }
     if ($ProfileCode=~/4/)
     {
-	print SIMCANDLES "cmsRun $DigiFile \@\@\@ IgProf_mem.MEM_TOTAL \@\@\@ ".$Candle."_digi_IgProfMemTotal \@\@\@ reuse\n";
+	print SIMCANDLES "cmsRun $DigiFile \@\@\@ IgProf_perf.PERF_TICKS \@\@\@ ".$Candle."_digi_IgProfperf\n";
     }
     if ($ProfileCode=~/5/)
     {
-	print SIMCANDLES "cmsRun $DigiFile \@\@\@ IgProf_mem.MEM_LIVE \@\@\@ ".$Candle."_digi_IgProfMemLive \@\@\@ reuse\n";
+	print SIMCANDLES "cmsRun $DigiFile \@\@\@ IgProf_mem.MEM_TOTAL \@\@\@ ".$Candle."_digi_IgProfMemTotal";
+	if (($ProfileCode=~/6/)||($ProfileCode=~/7/))
+	{
+	    print SIMCANDLES " \@\@\@ reuse\n";
+	}
+	else
+	{
+	    print SIMCANDLES "\n";
+	}
     }
-     if ($ProfileCode=~/6/)
+    if ($ProfileCode=~/6/)
+    {
+	print SIMCANDLES "cmsRun $DigiFile \@\@\@ IgProf_mem.MEM_LIVE \@\@\@ ".$Candle."_digi_IgProfMemLive";
+	if (($ProfileCode=~/7/))
+	{
+	    print SIMCANDLES " \@\@\@ reuse\n";
+	}
+	else
+	{
+	    print SIMCANDLES "\n";
+	}
+    }
+     if ($ProfileCode=~/7/)
     {
 	print SIMCANDLES "cmsRun $DigiFile \@\@\@ IgProf_mem.ANALYSE \@\@\@ ".$Candle."_digi_IgProfMemAnalyse\n";
     }   
-    if ($ProfileCode=~/7/)
+    if ($ProfileCode=~/8/)
     {
 	print SIMCANDLES "cmsRun $DigiFile \@\@\@ ValgrindFCE \@\@\@ ".$Candle."_digi_valgrind\n";
     }
-    if ($ProfileCode=~/8/)
+    if ($ProfileCode=~/9/)
     {
 	print SIMCANDLES "cmsRun $DigiFile \@\@\@ Memcheck_Valgrind \@\@\@ ".$Candle."_digi_memcheck_valgrind\n\n";
     }
