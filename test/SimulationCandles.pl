@@ -385,15 +385,7 @@ foreach (@Candle)
     if ($ProfileCode=~/2/)
     {
 	print "Preparing $Candle for SimpleMemoryCheck profile\n";
-	print SIMCANDLES "cmsRun $SimFile \@\@\@ SimpleMem_Parser \@\@\@ ".$Candle."_sim_SimpleMemReport";
-	if ($ProfileCode=~/3/)
-	{
-	    print SIMCANDLES " \@\@\@ reuse\n";
-	}
-	else
-	{
-	    print SIMCANDLES "\n";
-	}
+	print SIMCANDLES "cmsRun $SimFile \@\@\@ SimpleMem_Parser \@\@\@ ".$Candle."_sim_SimpleMemReport\n";
     }
     if ($ProfileCode=~/3/)
     {
@@ -449,7 +441,7 @@ foreach (@Candle)
     print SIMCANDLES "\n\#DIGI step\n";
     if ($ProfileCode=~/0/)
     {
-	print SIMCANDLES "cmsRun $DigiFile \@\@\@ Timing_Parser \@\@\@ ".$Candle."_sim_TimingReport";
+	print SIMCANDLES "cmsRun $DigiFile \@\@\@ Timing_Parser \@\@\@ ".$Candle."_digi_TimingReport";
 	if (($ProfileCode=~/1/)||($ProfileCode=~/2/)||($ProfileCode=~/3/))
 	    {
 		print SIMCANDLES " \@\@\@ reuse\n";
@@ -473,15 +465,7 @@ foreach (@Candle)
     }
     if ($ProfileCode=~/2/)
     {
-	print SIMCANDLES "cmsRun $DigiFile \@\@\@ SimpleMem_Parser \@\@\@ ".$Candle."_digi_SimpleMemReport";
-	if ($ProfileCode=~/3/)
-	{
-	    print SIMCANDLES " \@\@\@ reuse\n";
-	}
-	else
-	{
-	    print SIMCANDLES "\n";
-	}
+	print SIMCANDLES "cmsRun $DigiFile \@\@\@ SimpleMem_Parser \@\@\@ ".$Candle."_digi_SimpleMemReport\n";
     }
     if ($ProfileCode=~/3/)
     {
