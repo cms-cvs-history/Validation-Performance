@@ -42,19 +42,21 @@ def usage():
     print __doc__
 
 def GetFile(myFile,myFileLocation):
-    if myFile not in os.listdir("."):
-        print "Copying over %s" % myFile
-        if os.access(cmssw_release_base+myFileLocation+CfgFile,os.F_OK):
+    print "Copying over %s" % myFile
+    #First try the CMSSW_BASE version if there
+    if os.access(cmssw_base+myFileLocation+myFile,os.F_OK):
+        CpFile="cp -pR "+cmssw_base+myFileLocation+myFile+" ."
+        os.system(CpFile)
+    #If not there try the CMSSW_RELEASE_BASE version
+    else:
+        print "File %s not found in %s" % (myFile,cmssw_base+myFileLocation)
+        print "Trying in %s" % cmssw_release_base+myFileLocation
+        if os.access(cmssw_release_base+myFileLocation+myFile,os.F_OK):
             CpFile="cp -pR "+cmssw_release_base+myFileLocation+myFile+" ."
             os.system(CpFile)
         else:
-            print "File %s not found in %s" % (myFile,cmssw_release_base+myFileLocation)
-            print "Trying in %s" % cmssw_base+myFileLocation
-            CpFile="cp -pR "+cmssw_base+myFileLocation+myFile+" ."
-            os.system(CpFile)
-    else:
-        print "File %s is already present in current directory, not copying it" % myFile
-
+            print "**COULD NOT FIND THE NECESSARY %s FILE!**" % myFile
+    
 def RestoreSkipEventSetting(myRestoreFragment,mySkipEvents):
     NewSkipEvents="skipEvents=cms.untracked.uint32("+str(mySkipEvents)+")"
     NewFragmentFilename=myRestoreFragment.split(".")[0]+"Skip"+str(mySkipEvents)+"Evts.py"
@@ -185,7 +187,7 @@ def main(argv):
     #Second round SIM+DIGI restoring seeds:
     #Get the RestoreRandomSeeds.py locally (it could be done without copying the file locally, just use the link...)
     RestorePy="RestoreRandomSeeds.py"
-    GetFile(RestorePy,"Configuration/PyReleaseValidation/python/")
+    GetFile(RestorePy,"/src/Configuration/PyReleaseValidation/python/")
 
     #Edit the fragment to start from the wanted event:
     NewRestorePy=RestoreSkipEventSetting(RestorePy,skipEvents)
@@ -194,10 +196,10 @@ def main(argv):
     SIMDIGIRestoredSeedsFile=candle.split('.')[0]+"_SIM_DIGI_RestoredSeeds_Skip"+str(skipEvents)+"Evts"
     SIMDIGIRestoreSeedsCommand="cmsDriver.py "+candle+" -n "+numEvents+" -s SIM --customise="+NewRestorePy+" --filein file:"+SIMDIGISavedSeedsFile+".root --fileout="+SIMDIGIRestoredSeedsFile+".root >& "+SIMDIGIRestoredSeedsFile+".log"
     print "Executing %s" % SIMDIGIRestoreSeedsCommand
-    #ExitCode=os.system(SIMDIGIRestoreSeedsCommand)
-    #if ExitCode != 0:
-    #    print "Exit code for %s was %s" % (SIMDIGIRestoreSeedsCommand, ExitCode)
-    #    ExitCode=0
+    ExitCode=os.system(SIMDIGIRestoreSeedsCommand)
+    if ExitCode != 0:
+        print "Exit code for %s was %s" % (SIMDIGIRestoreSeedsCommand, ExitCode)
+        ExitCode=0
     
     #Get the cfg files necessary to run the dumpers(use python version of them!):
     CfgFilesLocation={"runSimHitCaloHitDumper_cfg.py":"/src/SimG4Core/Application/test/","runSimTrackSimVertexDumper_cfg.py":"/src/SimG4Core/Application/test/","runSimDigiDumper_cfg.py":"/src/Validation/Performance/test/"}
